@@ -1,0 +1,333 @@
+// Prisma schema for RAMAYANA CRM (B2B tourism booking system)
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Enums ----------
+
+enum Locale {
+  TH
+  EN
+  RU
+}
+
+enum UserRole {
+  ADMIN // internal staff (full visibility, moderation)
+  OWNER // agency owner (sees agency invoices, manages agency users)
+  AGENT // agency staff (creates bookings only)
+}
+
+enum UserStatus {
+  INVITED // invite sent, password not set yet
+  ACTIVE
+  SUSPENDED
+}
+
+enum OtpPurpose {
+  FIRST_LOGIN
+  PASSWORD_RESET
+}
+
+enum PriceUnit {
+  PER_PERSON
+  PER_UNIT // lockers, cabanas, towels: priced per item, not per head
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CASH
+  CARD
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING_REVIEW // bank transfer, screenshot uploaded, awaiting staff approval
+  APPROVED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT_REVIEW // bank transfer awaiting manual approval
+  CONFIRMED // in Daily Booking
+  REJECTED
+  CANCELLED
+}
+
+enum InvoiceStatus {
+  ISSUED
+  CREDITED // superseded by a credit note + replacement invoice
+}
+
+enum NotificationType {
+  CONTRACT_EXPIRING
+  BOOKING_PENDING_REVIEW // to admins
+  BOOKING_CONFIRMED
+  BOOKING_REJECTED
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+}
+
+// ---------- Agencies & tariffs ----------
+
+model TariffPlan {
+  id        String   @id @default(cuid())
+  name      String // e.g. "Standard", "OTA", "Resident"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  prices   TariffPlanPrice[]
+  agencies Agency[]
+
+  @@map("tariff_plans")
+}
+
+model PriceItem {
+  id           String    @id @default(cuid())
+  code         String    @unique // e.g. "TICKET_TOURIST_ADULT"
+  nameTh       String
+  nameEn       String
+  nameRu       String
+  unit         PriceUnit
+  isFree       Boolean   @default(false) // e.g. child under 106cm, licensed guide
+  displayOrder Int       @default(0)
+  isActive     Boolean   @default(true)
+
+  tariffPrices TariffPlanPrice[]
+  bookingLines BookingLine[]
+
+  @@map("price_items")
+}
+
+// Price history per plan per item — never mutated, only superseded,
+// so past invoices always reflect the price that was active when issued.
+model TariffPlanPrice {
+  id           String     @id @default(cuid())
+  tariffPlan   TariffPlan @relation(fields: [tariffPlanId], references: [id])
+  tariffPlanId String
+  priceItem    PriceItem  @relation(fields: [priceItemId], references: [id])
+  priceItemId  String
+  unitPrice    Decimal    @db.Decimal(10, 2) // THB
+  validFrom    DateTime   @default(now())
+  validTo      DateTime? // null = currently active
+
+  @@index([tariffPlanId, priceItemId, validFrom])
+  @@map("tariff_plan_prices")
+}
+
+model Agency {
+  id             String     @id @default(cuid())
+  name           String
+  email          String     @unique
+  locale         Locale     @default(EN)
+  tariffPlan     TariffPlan @relation(fields: [tariffPlanId], references: [id])
+  tariffPlanId   String
+  contractStart  DateTime   @default(now())
+  contractEnd    DateTime
+  depositBalance Decimal    @default(0) @db.Decimal(12, 2) // THB, prepaid credit
+  creditLimit    Decimal    @default(0) @db.Decimal(12, 2) // THB, postpaid allowance
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  users         User[]
+  bookings      Booking[]
+  invoices      Invoice[]
+  notifications Notification[]
+
+  @@map("agencies")
+}
+
+// ---------- Users, invites, auth ----------
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  passwordHash  String?
+  role          UserRole
+  status        UserStatus @default(INVITED)
+  mustChangePwd Boolean    @default(false)
+  agency        Agency?    @relation(fields: [agencyId], references: [id])
+  agencyId      String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  invites          Invite[]
+  otpCodes         OtpCode[]
+  bookingsCreated  Booking[]  @relation("BookingCreatedBy")
+  paymentsReviewed Payment[]  @relation("PaymentReviewedBy")
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model Invite {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("invites")
+}
+
+model OtpCode {
+  id         String     @id @default(cuid())
+  user       User       @relation(fields: [userId], references: [id])
+  userId     String
+  purpose    OtpPurpose
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int        @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([userId, purpose])
+  @@map("otp_codes")
+}
+
+// ---------- Bookings ----------
+
+model Booking {
+  id             String        @id @default(cuid())
+  agency         Agency        @relation(fields: [agencyId], references: [id])
+  agencyId       String
+  createdBy      User          @relation("BookingCreatedBy", fields: [createdById], references: [id])
+  createdById    String
+  visitDate      DateTime      @db.Date // calendar date only, Asia/Bangkok
+  status         BookingStatus @default(PENDING_PAYMENT_REVIEW)
+  paymentMethod  PaymentMethod
+  idempotencyKey String        @unique // prevents duplicate double-click bookings
+  totalAmount    Decimal       @db.Decimal(12, 2) // sum of line snapshots, THB
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  lines    BookingLine[]
+  payments Payment[]
+  invoices Invoice[]
+
+  @@index([agencyId, visitDate])
+  @@index([status])
+  @@map("bookings")
+}
+
+// One row per ticket/item type in a booking, with the price frozen
+// at booking time so later tariff changes never rewrite past bookings.
+model BookingLine {
+  id                 String    @id @default(cuid())
+  booking            Booking   @relation(fields: [bookingId], references: [id])
+  bookingId          String
+  priceItem          PriceItem @relation(fields: [priceItemId], references: [id])
+  priceItemId        String
+  quantity           Int
+  unitPriceAtBooking Decimal   @db.Decimal(10, 2)
+  lineTotal          Decimal   @db.Decimal(12, 2)
+
+  @@map("booking_lines")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  bookingId       String
+  method          PaymentMethod
+  status          PaymentStatus @default(APPROVED)
+  proofFileUrl    String? // required for BANK_TRANSFER
+  reportedAmount  Decimal?      @db.Decimal(12, 2) // what the agent claims they paid
+  paymentDate     DateTime?
+  reviewedBy      User?         @relation("PaymentReviewedBy", fields: [reviewedById], references: [id])
+  reviewedById    String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime      @default(now())
+
+  @@map("payments")
+}
+
+// ---------- Invoices ----------
+
+model Invoice {
+  id        String        @id @default(cuid())
+  number    String        @unique // sequential, e.g. INV-2026-00001, never reused
+  booking   Booking       @relation(fields: [bookingId], references: [id])
+  bookingId String
+  agency    Agency        @relation(fields: [agencyId], references: [id])
+  agencyId  String
+  status    InvoiceStatus @default(ISSUED)
+  pdfUrl    String
+  issuedAt  DateTime      @default(now())
+
+  creditNotes CreditNote[]
+
+  @@map("invoices")
+}
+
+// Booking edits never rewrite an issued invoice — they close it out
+// with a credit note; a fresh invoice is issued for the new amount.
+model CreditNote {
+  id        String   @id @default(cuid())
+  number    String   @unique // e.g. CN-2026-00001
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  invoiceId String
+  reason    String
+  amount    Decimal  @db.Decimal(12, 2)
+  pdfUrl    String
+  issuedAt  DateTime @default(now())
+
+  @@map("credit_notes")
+}
+
+// ---------- Sequential numbering ----------
+
+// Guarantees gap-free, concurrency-safe invoice/credit-note numbers per year.
+model NumberSequence {
+  id       String @id // e.g. "invoice-2026", "credit-note-2026"
+  lastUsed Int    @default(0)
+
+  @@map("number_sequences")
+}
+
+// ---------- Notifications & audit ----------
+
+model Notification {
+  id        String              @id @default(cuid())
+  agency    Agency              @relation(fields: [agencyId], references: [id])
+  agencyId  String
+  type      NotificationType
+  channel   NotificationChannel
+  payload   Json
+  sentAt    DateTime?
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  @@index([agencyId, createdAt])
+  @@map("notifications")
+}
+
+// Append-only. Never updated or deleted — the record of who changed what.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actor      User?    @relation(fields: [actorId], references: [id])
+  actorId    String?
+  action     String // e.g. "booking.status_changed"
+  entityType String // e.g. "Booking"
+  entityId   String
+  before     Json?
+  after      Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
