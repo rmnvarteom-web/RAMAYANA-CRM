@@ -28,9 +28,11 @@ export default async function DashboardPage() {
         Signed in as {user.email} ({user.role}).
       </p>
 
-      <p className="text-sm text-black/60">
-        Bookings, statistics, and invoices land here in the next build steps.
-      </p>
+      {user.agency && (
+        <Link href="/dashboard/bookings" className="text-sm underline">
+          Bookings →
+        </Link>
+      )}
 
       {user.role === "ADMIN" && (
         <Link href="/admin/agencies" className="text-sm underline">
