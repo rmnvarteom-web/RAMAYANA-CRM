@@ -35,6 +35,7 @@ export async function createBookingAction(
 
   const parsed = createBookingSchema.safeParse({
     visitDate: formData.get("visitDate"),
+    customerName: formData.get("customerName"),
     paymentMethod: formData.get("paymentMethod"),
     idempotencyKey: formData.get("idempotencyKey"),
     lines,

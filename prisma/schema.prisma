@@ -205,6 +205,7 @@ model Booking {
   agencyId       String
   createdBy      User          @relation("BookingCreatedBy", fields: [createdById], references: [id])
   createdById    String
+  customerName   String? // end tourist's name, shown on the voucher; agencies don't always have it upfront
   visitDate      DateTime      @db.Date // calendar date only, Asia/Bangkok
   status         BookingStatus @default(PENDING_PAYMENT_REVIEW)
   paymentMethod  PaymentMethod

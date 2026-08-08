@@ -53,6 +53,18 @@ export function CreateBookingForm({
         />
       </div>
 
+      <div className="flex flex-col gap-1">
+        <label htmlFor="customerName" className="text-sm font-medium">
+          Customer&apos;s name <span className="text-black/40">(optional)</span>
+        </label>
+        <input
+          id="customerName"
+          name="customerName"
+          type="text"
+          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-black"
+        />
+      </div>
+
       <div className="flex flex-col gap-2">
         <p className="text-sm font-medium">Items</p>
         {items.map((item) => (

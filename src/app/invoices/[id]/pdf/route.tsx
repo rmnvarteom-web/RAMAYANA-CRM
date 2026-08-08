@@ -27,9 +27,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const buffer = await renderToBuffer(
     <InvoicePdfDocument
       invoiceNumber={invoice.number}
-      issuedAt={invoice.issuedAt}
       agencyName={invoice.agency.name}
-      agencyEmail={invoice.agency.email}
+      customerName={invoice.booking.customerName}
       visitDate={invoice.booking.visitDate}
       paymentMethod={invoice.booking.paymentMethod}
       lines={invoice.booking.lines.map((line) => ({

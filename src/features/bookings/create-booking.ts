@@ -45,6 +45,7 @@ export async function createBooking(
     data: {
       agencyId: context.agencyId,
       createdById: context.createdById,
+      customerName: input.customerName ?? null,
       visitDate: new Date(input.visitDate),
       status: isAutoConfirmed ? "CONFIRMED" : "PENDING_PAYMENT_REVIEW",
       paymentMethod: input.paymentMethod,
