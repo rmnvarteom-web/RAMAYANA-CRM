@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/features/auth/guards";
 
 export default async function AgenciesPage() {
+  await requireAdmin();
+
   const agencies = await db.agency.findMany({
     include: { tariffPlan: true },
     orderBy: { createdAt: "desc" },

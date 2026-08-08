@@ -1,7 +1,10 @@
 import { db } from "@/lib/db";
 import { CreateAgencyForm } from "@/app/admin/agencies/new/CreateAgencyForm";
+import { requireAdmin } from "@/features/auth/guards";
 
 export default async function NewAgencyPage() {
+  await requireAdmin();
+
   const tariffPlans = await db.tariffPlan.findMany({
     where: { isActive: true },
     select: { id: true, name: true },

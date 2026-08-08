@@ -1,12 +1,10 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getSession } from "@/features/auth/session";
+import { requireSession } from "@/features/auth/guards";
 import { db } from "@/lib/db";
 import { logoutAction } from "@/features/auth/actions";
 
 export default async function DashboardPage() {
-  const session = await getSession();
-  if (!session.userId) redirect("/login");
+  const session = await requireSession();
 
   const user = await db.user.findUniqueOrThrow({
     where: { id: session.userId },
