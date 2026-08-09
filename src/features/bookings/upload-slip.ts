@@ -21,22 +21,27 @@ export async function uploadPaymentSlip(
 
   const payment = booking.payments[0];
 
-  await db.$transaction([
-    db.payment.update({
-      where: { id: payment.id },
-      data: {
-        proofFileUrl: proofDataUrl,
-        reportedAmount: booking.totalAmount,
-        status: "PENDING_REVIEW",
-        rejectionReason: null,
-        paymentDate: new Date(),
-      },
-    }),
-    db.booking.update({
-      where: { id: booking.id },
-      data: { status: "PENDING_PAYMENT_REVIEW" },
-    }),
-  ]);
+  await db.$transaction(
+    [
+      db.payment.update({
+        where: { id: payment.id },
+        data: {
+          proofFileUrl: proofDataUrl,
+          reportedAmount: booking.totalAmount,
+          status: "PENDING_REVIEW",
+          rejectionReason: null,
+          paymentDate: new Date(),
+        },
+      }),
+      db.booking.update({
+        where: { id: booking.id },
+        data: { status: "PENDING_PAYMENT_REVIEW" },
+      }),
+    ],
+    // Prisma's default 5s interactive-transaction timeout is too tight once
+    // the payload includes a multi-MB base64 image — give it real headroom.
+    { timeout: 30_000 },
+  );
 
   return { ok: true };
 }
