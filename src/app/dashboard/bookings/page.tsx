@@ -5,6 +5,7 @@ import { requireSession } from "@/features/auth/guards";
 import { formatBangkokDate } from "@/lib/timezone";
 
 const STATUS_LABEL: Record<string, string> = {
+  AWAITING_PAYMENT: "Awaiting payment slip",
   PENDING_PAYMENT_REVIEW: "Pending review",
   CONFIRMED: "Confirmed",
   REJECTED: "Rejected",
@@ -33,13 +34,15 @@ export default async function BookingsPage() {
       <ul className="flex flex-col gap-3">
         {bookings.map((booking) => (
           <li key={booking.id} className="rounded-md border border-black/10 p-3">
-            <div className="flex items-center justify-between">
-              <p className="font-medium">{formatBangkokDate(booking.visitDate)}</p>
-              <span className="text-sm">{STATUS_LABEL[booking.status]}</span>
-            </div>
-            <p className="text-sm text-black/60">
-              THB {Number(booking.totalAmount).toFixed(2)} · {booking.paymentMethod}
-            </p>
+            <Link href={`/dashboard/bookings/${booking.id}`} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <p className="font-medium">{formatBangkokDate(booking.visitDate)}</p>
+                <span className="text-sm">{STATUS_LABEL[booking.status]}</span>
+              </div>
+              <p className="text-sm text-black/60">
+                THB {Number(booking.totalAmount).toFixed(2)} · {booking.paymentMethod}
+              </p>
+            </Link>
             {booking.invoices[0] && (
               <a
                 href={`/invoices/${booking.invoices[0].id}/pdf`}

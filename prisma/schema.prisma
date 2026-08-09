@@ -54,7 +54,8 @@ enum PaymentStatus {
 }
 
 enum BookingStatus {
-  PENDING_PAYMENT_REVIEW // bank transfer awaiting manual approval
+  AWAITING_PAYMENT // bank transfer booked, no slip uploaded yet
+  PENDING_PAYMENT_REVIEW // slip uploaded, awaiting staff approval
   CONFIRMED // in Daily Booking
   REJECTED
   CANCELLED

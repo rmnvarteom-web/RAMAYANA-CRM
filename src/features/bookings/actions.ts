@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSession } from "@/features/auth/session";
 import { createBooking } from "@/features/bookings/create-booking";
+import { uploadPaymentSlip } from "@/features/bookings/upload-slip";
 import { createBookingSchema } from "@/features/bookings/schemas";
 import { validatePaymentProof } from "@/features/bookings/uploads";
 import type { ActionState } from "@/features/auth/actions";
@@ -63,4 +64,26 @@ export async function createBookingAction(
   if (!result.ok) return { error: REASON_MESSAGES[result.reason] };
 
   redirect("/dashboard/bookings");
+}
+
+export async function uploadPaymentSlipAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const session = await getSession();
+  if (!session.userId || !session.agencyId) return { error: "Not authorized." };
+
+  const bookingId = String(formData.get("bookingId") ?? "");
+  const proofFile = formData.get("proofFile");
+  if (!(proofFile instanceof File) || proofFile.size === 0) {
+    return { error: "Attach a payment slip image." };
+  }
+
+  const validated = await validatePaymentProof(proofFile);
+  if (!validated.ok) return { error: REASON_MESSAGES[validated.reason] };
+
+  const result = await uploadPaymentSlip(bookingId, session.agencyId, validated.dataUrl);
+  if (!result.ok) return { error: "This booking can't accept a payment slip right now." };
+
+  redirect(`/dashboard/bookings/${bookingId}`);
 }

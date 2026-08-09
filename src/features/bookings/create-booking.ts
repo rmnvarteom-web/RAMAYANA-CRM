@@ -6,8 +6,12 @@ import type { CreateBookingInput } from "@/features/bookings/schemas";
 
 export type CreateBookingResult =
   | { ok: true; bookingId: string }
-  | { ok: false; reason: "past_date" | "no_items" | "proof_required" | "invalid_items" };
+  | { ok: false; reason: "past_date" | "no_items" | "invalid_items" };
 
+// Bank transfer bookings don't need proof up front — an agency can book now
+// and attach the slip once they've actually collected payment (later that
+// day, or whenever). Every booking gets an invoice immediately regardless
+// of payment status; confirming payment is a separate step.
 export async function createBooking(
   input: CreateBookingInput,
   context: { agencyId: string; createdById: string },
@@ -17,10 +21,6 @@ export async function createBooking(
 
   const selectedLines = input.lines.filter((line) => line.quantity > 0);
   if (selectedLines.length === 0) return { ok: false, reason: "no_items" };
-
-  if (input.paymentMethod === "BANK_TRANSFER" && !proofDataUrl) {
-    return { ok: false, reason: "proof_required" };
-  }
 
   const agency = await db.agency.findUniqueOrThrow({ where: { id: context.agencyId } });
   const pricedItems = await getPricedItemsForTariffPlan(agency.tariffPlanId);
@@ -39,7 +39,12 @@ export async function createBooking(
   }
   const totalAmount = lineData.reduce((sum, l) => sum + l.lineTotal, 0);
 
-  const isAutoConfirmed = input.paymentMethod !== "BANK_TRANSFER";
+  const isBankTransfer = input.paymentMethod === "BANK_TRANSFER";
+  const status = !isBankTransfer
+    ? "CONFIRMED"
+    : proofDataUrl
+      ? "PENDING_PAYMENT_REVIEW"
+      : "AWAITING_PAYMENT";
 
   const booking = await db.booking.create({
     data: {
@@ -47,7 +52,7 @@ export async function createBooking(
       createdById: context.createdById,
       customerName: input.customerName ?? null,
       visitDate: new Date(input.visitDate),
-      status: isAutoConfirmed ? "CONFIRMED" : "PENDING_PAYMENT_REVIEW",
+      status,
       paymentMethod: input.paymentMethod,
       idempotencyKey: input.idempotencyKey,
       totalAmount,
@@ -55,17 +60,15 @@ export async function createBooking(
       payments: {
         create: {
           method: input.paymentMethod,
-          status: isAutoConfirmed ? "APPROVED" : "PENDING_REVIEW",
+          status: isBankTransfer ? "PENDING_REVIEW" : "APPROVED",
           proofFileUrl: proofDataUrl,
-          reportedAmount: isAutoConfirmed ? totalAmount : null,
+          reportedAmount: isBankTransfer ? null : totalAmount,
         },
       },
     },
   });
 
-  if (isAutoConfirmed) {
-    await createInvoiceForBooking(booking.id, context.agencyId);
-  }
+  await createInvoiceForBooking(booking.id, context.agencyId);
 
   return { ok: true, bookingId: booking.id };
 }

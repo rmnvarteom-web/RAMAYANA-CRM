@@ -42,9 +42,14 @@ export default async function DashboardPage() {
       )}
 
       {user.role === "ADMIN" && (
-        <Link href="/admin/agencies" className="text-sm underline">
-          Manage agencies →
-        </Link>
+        <>
+          <Link href="/admin/agencies" className="text-sm underline">
+            Manage agencies →
+          </Link>
+          <Link href="/admin/bookings" className="text-sm underline">
+            Payments pending review →
+          </Link>
+        </>
       )}
     </main>
   );

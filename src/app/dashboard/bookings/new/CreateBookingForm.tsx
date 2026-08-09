@@ -113,19 +113,17 @@ export function CreateBookingForm({
       {paymentMethod === "BANK_TRANSFER" && (
         <div className="flex flex-col gap-1">
           <label htmlFor="proofFile" className="text-sm font-medium">
-            Transfer screenshot
+            Payment slip <span className="text-black/40">(optional, can add later)</span>
           </label>
           <input
             id="proofFile"
             name="proofFile"
             type="file"
             accept="image/jpeg,image/png"
-            required
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-black"
           />
           <p className="text-xs text-black/60">
-            Your booking will show as &ldquo;pending review&rdquo; until staff confirm the
-            transfer.
+            No slip yet? Book now and upload it from the booking page once you have it.
           </p>
         </div>
       )}
