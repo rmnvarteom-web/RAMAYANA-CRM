@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireSession } from "@/features/auth/guards";
 import { db } from "@/lib/db";
 import { logoutAction } from "@/features/auth/actions";
+import { getBookingStats } from "@/features/bookings/stats";
+import { StatsGrid } from "@/app/dashboard/StatsGrid";
 
 export default async function DashboardPage() {
   const session = await requireSession();
@@ -10,6 +12,8 @@ export default async function DashboardPage() {
     where: { id: session.userId },
     include: { agency: true },
   });
+
+  const stats = user.agency ? await getBookingStats(user.agency.id) : null;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-12">
@@ -28,10 +32,13 @@ export default async function DashboardPage() {
         Signed in as {user.email} ({user.role}).
       </p>
 
-      {user.agency && (
-        <Link href="/dashboard/bookings" className="text-sm underline">
-          Bookings →
-        </Link>
+      {stats && (
+        <>
+          <StatsGrid stats={stats} />
+          <Link href="/dashboard/bookings" className="text-sm underline">
+            Bookings →
+          </Link>
+        </>
       )}
 
       {user.role === "ADMIN" && (

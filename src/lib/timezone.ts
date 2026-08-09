@@ -25,6 +25,13 @@ export function addDaysToDateString(dateStr: string, days: number): string {
   return toBangkokDateString(date);
 }
 
+// Thailand has no DST, so the +07:00 offset is always correct — the start
+// of a Bangkok calendar day as a real UTC instant, for range queries against
+// timestamp columns (createdAt) rather than the plain-date visitDate column.
+export function bangkokDayStartUtc(dateStr: string): Date {
+  return new Date(`${dateStr}T00:00:00+07:00`);
+}
+
 // Human-readable display for date-only values (bookings, invoices). Using
 // the server's local timezone here would shift the date back a day for
 // any server not already in Bangkok — the exact bug this file exists to
