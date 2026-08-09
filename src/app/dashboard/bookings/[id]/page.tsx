@@ -3,14 +3,9 @@ import { db } from "@/lib/db";
 import { requireSession } from "@/features/auth/guards";
 import { formatBangkokDate } from "@/lib/timezone";
 import { UploadSlipForm } from "@/app/dashboard/bookings/[id]/UploadSlipForm";
-
-const STATUS_LABEL: Record<string, string> = {
-  AWAITING_PAYMENT: "Awaiting payment slip",
-  PENDING_PAYMENT_REVIEW: "Pending review",
-  CONFIRMED: "Confirmed",
-  REJECTED: "Rejected",
-  CANCELLED: "Cancelled",
-};
+import { StatusBadge } from "@/components/StatusBadge";
+import { BackLink } from "@/components/BackLink";
+import { pageShell, card } from "@/lib/ui";
 
 export default async function BookingDetailPage({
   params,
@@ -39,56 +34,65 @@ export default async function BookingDetailPage({
     (booking.status === "AWAITING_PAYMENT" || booking.status === "REJECTED") &&
     session.role !== "ADMIN";
 
+  const backHref = session.role === "ADMIN" ? "/admin/daily-booking" : "/dashboard/bookings";
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-12">
+    <main className={pageShell}>
+      <BackLink href={backHref}>{session.role === "ADMIN" ? "Daily Booking" : "Bookings"}</BackLink>
+
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{formatBangkokDate(booking.visitDate)}</h1>
-        <span className="text-sm">{STATUS_LABEL[booking.status]}</span>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          {formatBangkokDate(booking.visitDate)}
+        </h1>
+        <StatusBadge status={booking.status} />
       </div>
 
-      {session.role === "ADMIN" && (
-        <p className="text-sm text-black/60">{booking.agency.name}</p>
-      )}
+      {session.role === "ADMIN" && <p className="text-sm text-gray-500">{booking.agency.name}</p>}
 
-      <ul className="flex flex-col gap-1 text-sm">
-        {booking.lines.map((line) => (
-          <li key={line.id} className="flex justify-between">
-            <span>
-              {line.priceItem.nameEn} × {line.quantity}
-            </span>
-            <span>THB {Number(line.lineTotal).toFixed(2)}</span>
-          </li>
-        ))}
-      </ul>
-      <p className="text-sm font-semibold">
-        Total: THB {Number(booking.totalAmount).toFixed(2)} · {booking.paymentMethod}
-      </p>
+      <div className={card}>
+        <ul className="flex flex-col divide-y divide-gray-100 text-sm">
+          {booking.lines.map((line) => (
+            <li key={line.id} className="flex justify-between py-2 first:pt-0 last:pb-0">
+              <span className="text-gray-700">
+                {line.priceItem.nameEn} × {line.quantity}
+              </span>
+              <span className="text-gray-900">THB {Number(line.lineTotal).toFixed(2)}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
+          <span className="text-sm text-gray-500">{booking.paymentMethod}</span>
+          <span className="text-base font-semibold text-gray-900">
+            THB {Number(booking.totalAmount).toFixed(2)}
+          </span>
+        </div>
+      </div>
 
       {booking.invoices[0] && (
         <a
           href={`/invoices/${booking.invoices[0].id}/pdf`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm underline"
+          className="w-fit text-sm font-medium text-blue-600 hover:text-blue-700"
         >
-          Download invoice
+          Download invoice →
         </a>
       )}
 
       {payment?.rejectionReason && (
-        <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-          Rejected: {payment.rejectionReason}
+        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          <span className="font-medium">Rejected:</span> {payment.rejectionReason}
         </p>
       )}
 
       {payment?.proofFileUrl && (
-        <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium">Payment slip</p>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-sm font-medium text-gray-700">Payment slip</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={payment.proofFileUrl}
             alt="Payment slip"
-            className="max-w-xs rounded-md border border-black/10"
+            className="max-w-xs rounded-lg border border-gray-200"
           />
         </div>
       )}

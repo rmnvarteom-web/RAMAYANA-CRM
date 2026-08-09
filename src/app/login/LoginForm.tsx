@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { loginAction, type ActionState } from "@/features/auth/actions";
+import { input, label, buttonPrimary } from "@/lib/ui";
 
 const initialState: ActionState = {};
 
@@ -11,8 +12,8 @@ export function LoginForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="email" className={label}>
           Email
         </label>
         <input
@@ -21,11 +22,11 @@ export function LoginForm() {
           type="email"
           required
           autoComplete="email"
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-black"
+          className={input}
         />
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-sm font-medium">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className={label}>
           Password
         </label>
         <input
@@ -34,21 +35,20 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-black"
+          className={input}
         />
       </div>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-black text-white py-2 disabled:opacity-50"
-      >
+      <button type="submit" disabled={pending} className={buttonPrimary}>
         {pending ? "Signing in..." : "Sign in"}
       </button>
 
-      <Link href="/forgot-password" className="text-sm text-center underline">
+      <Link
+        href="/forgot-password"
+        className="text-center text-sm text-blue-600 hover:text-blue-700"
+      >
         Forgot password?
       </Link>
     </form>

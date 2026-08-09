@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { requireSession } from "@/features/auth/guards";
 import { db } from "@/lib/db";
-import { logoutAction } from "@/features/auth/actions";
 import { getBookingStats } from "@/features/bookings/stats";
 import { StatsGrid } from "@/app/dashboard/StatsGrid";
+import { pageShell, card } from "@/lib/ui";
 
 export default async function DashboardPage() {
   const session = await requireSession();
@@ -16,43 +16,46 @@ export default async function DashboardPage() {
   const stats = user.agency ? await getBookingStats(user.agency.id) : null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-12">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">
-          {user.agency ? user.agency.name : "RAMAYANA CRM Admin"}
+    <main className={pageShell}>
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          {user.agency ? `Welcome, ${user.agency.name}` : "Admin overview"}
         </h1>
-        <form action={logoutAction}>
-          <button type="submit" className="text-sm underline">
-            Sign out
-          </button>
-        </form>
+        <p className="mt-1 text-sm text-gray-500">
+          Signed in as {user.email} · {user.role}
+        </p>
       </div>
 
-      <p className="text-black/60">
-        Signed in as {user.email} ({user.role}).
-      </p>
-
       {stats && (
-        <>
+        <div className="flex flex-col gap-3">
           <StatsGrid stats={stats} />
-          <Link href="/dashboard/bookings" className="text-sm underline">
-            Bookings →
+          <Link
+            href="/dashboard/bookings"
+            className="w-fit text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            View all bookings →
           </Link>
-        </>
+        </div>
       )}
 
       {user.role === "ADMIN" && (
-        <>
-          <Link href="/admin/agencies" className="text-sm underline">
-            Manage agencies →
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Link href="/admin/agencies" className={`${card} transition-shadow hover:shadow-md`}>
+            <p className="font-medium text-gray-900">Agencies</p>
+            <p className="mt-1 text-sm text-gray-500">Create and manage travel agencies</p>
           </Link>
-          <Link href="/admin/bookings" className="text-sm underline">
-            Payments pending review →
+          <Link href="/admin/bookings" className={`${card} transition-shadow hover:shadow-md`}>
+            <p className="font-medium text-gray-900">Pending payments</p>
+            <p className="mt-1 text-sm text-gray-500">Review bank transfer slips</p>
           </Link>
-          <Link href="/admin/daily-booking" className="text-sm underline">
-            Daily Booking →
+          <Link
+            href="/admin/daily-booking"
+            className={`${card} transition-shadow hover:shadow-md`}
+          >
+            <p className="font-medium text-gray-900">Daily Booking</p>
+            <p className="mt-1 text-sm text-gray-500">See who&apos;s arriving on a given day</p>
           </Link>
-        </>
+        </div>
       )}
     </main>
   );

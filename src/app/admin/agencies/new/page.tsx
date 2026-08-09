@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { CreateAgencyForm } from "@/app/admin/agencies/new/CreateAgencyForm";
 import { requireAdmin } from "@/features/auth/guards";
+import { BackLink } from "@/components/BackLink";
+import { pageShell } from "@/lib/ui";
 
 export default async function NewAgencyPage() {
   await requireAdmin();
@@ -12,8 +14,9 @@ export default async function NewAgencyPage() {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 px-4 py-12">
-      <h1 className="text-xl font-semibold">New agency</h1>
+    <main className={`${pageShell} max-w-md`}>
+      <BackLink href="/admin/agencies">Agencies</BackLink>
+      <h1 className="text-2xl font-semibold text-gray-900">New agency</h1>
       <CreateAgencyForm tariffPlans={tariffPlans} />
     </main>
   );

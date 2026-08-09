@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { createAgencyAction } from "@/features/agencies/actions";
 import type { ActionState } from "@/features/auth/actions";
+import { input, label as labelClass, buttonPrimary } from "@/lib/ui";
 
 const initialState: ActionState = {};
 
@@ -14,36 +15,26 @@ export function CreateAgencyForm({
   const [state, formAction, pending] = useActionState(createAgencyAction, initialState);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form action={formAction} className="flex flex-col gap-5">
       <Field label="Agency name" name="name" required />
       <Field label="Email" name="email" type="email" required />
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="locale" className="text-sm font-medium">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="locale" className={labelClass}>
           Language
         </label>
-        <select
-          id="locale"
-          name="locale"
-          defaultValue="EN"
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-black"
-        >
+        <select id="locale" name="locale" defaultValue="EN" className={input}>
           <option value="EN">English</option>
           <option value="RU">Русский</option>
           <option value="TH">ไทย</option>
         </select>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="tariffPlanId" className="text-sm font-medium">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="tariffPlanId" className={labelClass}>
           Tariff plan
         </label>
-        <select
-          id="tariffPlanId"
-          name="tariffPlanId"
-          required
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-black"
-        >
+        <select id="tariffPlanId" name="tariffPlanId" required className={input}>
           <option value="">Select a plan</option>
           {tariffPlans.map((plan) => (
             <option key={plan.id} value={plan.id}>
@@ -59,11 +50,7 @@ export function CreateAgencyForm({
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-black text-white py-2 disabled:opacity-50"
-      >
+      <button type="submit" disabled={pending} className={buttonPrimary}>
         {pending ? "Creating..." : "Create agency & send invite"}
       </button>
     </form>
@@ -84,8 +71,8 @@ function Field({
   defaultValue?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-sm font-medium">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={name} className={labelClass}>
         {label}
       </label>
       <input
@@ -94,7 +81,7 @@ function Field({
         type={type}
         required={required}
         defaultValue={defaultValue}
-        className="rounded-md border border-gray-300 bg-white px-3 py-2 text-black"
+        className={input}
       />
     </div>
   );

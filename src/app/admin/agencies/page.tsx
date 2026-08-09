@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/features/auth/guards";
+import { formatBangkokDate } from "@/lib/timezone";
+import { BackLink } from "@/components/BackLink";
+import { pageShell, card, buttonPrimary } from "@/lib/ui";
 
 export default async function AgenciesPage() {
   await requireAdmin();
@@ -11,26 +14,28 @@ export default async function AgenciesPage() {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-12">
+    <main className={pageShell}>
+      <BackLink href="/dashboard">Dashboard</BackLink>
+
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Agencies</h1>
-        <Link href="/admin/agencies/new" className="text-sm underline">
+        <h1 className="text-2xl font-semibold text-gray-900">Agencies</h1>
+        <Link href="/admin/agencies/new" className={buttonPrimary}>
           + New agency
         </Link>
       </div>
 
       <ul className="flex flex-col gap-3">
         {agencies.map((agency) => (
-          <li key={agency.id} className="rounded-md border border-black/10 p-3">
-            <p className="font-medium">{agency.name}</p>
-            <p className="text-sm text-black/60">
+          <li key={agency.id} className={card}>
+            <p className="font-medium text-gray-900">{agency.name}</p>
+            <p className="text-sm text-gray-500">
               {agency.email} · {agency.tariffPlan.name} · contract ends{" "}
-              {agency.contractEnd.toLocaleDateString()}
+              {formatBangkokDate(agency.contractEnd)}
             </p>
           </li>
         ))}
         {agencies.length === 0 && (
-          <p className="text-sm text-black/60">No agencies yet.</p>
+          <p className={`${card} text-center text-sm text-gray-500`}>No agencies yet.</p>
         )}
       </ul>
     </main>

@@ -1,4 +1,5 @@
 import type { BookingStats } from "@/features/bookings/stats";
+import { card } from "@/lib/ui";
 
 export function StatsGrid({ stats }: { stats: BookingStats }) {
   const cards: { label: string; value: number }[] = [
@@ -10,10 +11,10 @@ export function StatsGrid({ stats }: { stats: BookingStats }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {cards.map((card) => (
-        <div key={card.label} className="rounded-md border border-black/10 p-4 text-center">
-          <p className="text-2xl font-semibold">{card.value}</p>
-          <p className="text-xs text-black/60">{card.label}</p>
+      {cards.map((c) => (
+        <div key={c.label} className={`${card} text-center`}>
+          <p className="text-3xl font-semibold tracking-tight text-gray-900">{c.value}</p>
+          <p className="mt-1 text-xs font-medium text-gray-500">{c.label}</p>
         </div>
       ))}
     </div>

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { requestPasswordResetAction, type ActionState } from "@/features/auth/actions";
+import { input, label, buttonPrimary } from "@/lib/ui";
 
 const initialState: ActionState = {};
 
@@ -15,13 +16,13 @@ export function ForgotPasswordForm() {
   if (state.success) {
     return (
       <div className="flex flex-col gap-4">
-        <p className="text-sm">
+        <p className="text-sm text-gray-600">
           If that email is registered, a reset code has been sent. Check your inbox.
         </p>
         <button
           type="button"
           onClick={() => router.push(`/reset-password?email=${encodeURIComponent(email)}`)}
-          className="rounded-md bg-black text-white py-2"
+          className={buttonPrimary}
         >
           I have the code
         </button>
@@ -31,8 +32,8 @@ export function ForgotPasswordForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="email" className={label}>
           Email
         </label>
         <input
@@ -42,17 +43,13 @@ export function ForgotPasswordForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-black"
+          className={input}
         />
       </div>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-black text-white py-2 disabled:opacity-50"
-      >
+      <button type="submit" disabled={pending} className={buttonPrimary}>
         {pending ? "Sending..." : "Send reset code"}
       </button>
     </form>

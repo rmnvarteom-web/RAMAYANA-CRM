@@ -1,10 +1,14 @@
 import { ForgotPasswordForm } from "@/app/forgot-password/ForgotPasswordForm";
+import { AuthCard } from "@/components/AuthCard";
+import { BackLink } from "@/components/BackLink";
 
 export default function ForgotPasswordPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-4">
-      <h1 className="text-xl font-semibold">Reset your password</h1>
-      <ForgotPasswordForm />
-    </main>
+    <AuthCard title="Reset your password">
+      <div className="flex flex-col gap-5">
+        <ForgotPasswordForm />
+        <BackLink href="/login">Sign in</BackLink>
+      </div>
+    </AuthCard>
   );
 }
