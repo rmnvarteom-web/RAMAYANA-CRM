@@ -25,9 +25,14 @@ export async function AppHeader() {
           </Link>
           <nav className="flex flex-wrap items-center gap-4">
             {user.agency && (
-              <Link href="/dashboard/bookings" className={linkClass}>
-                Bookings
-              </Link>
+              <>
+                <Link href="/dashboard/bookings" className={linkClass}>
+                  Bookings
+                </Link>
+                <Link href="/dashboard/statistics" className={linkClass}>
+                  Statistics
+                </Link>
+              </>
             )}
             {user.role === "ADMIN" && (
               <>

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requireSession } from "@/features/auth/guards";
 import { db } from "@/lib/db";
 import { getBookingStats } from "@/features/bookings/stats";
-import { StatsGrid } from "@/app/dashboard/StatsGrid";
 import { pageShell, card } from "@/lib/ui";
 
 export default async function DashboardPage() {
@@ -27,13 +26,26 @@ export default async function DashboardPage() {
       </div>
 
       {stats && (
-        <div className="flex flex-col gap-3">
-          <StatsGrid stats={stats} />
+        <div className="grid gap-3 sm:grid-cols-2">
           <Link
             href="/dashboard/bookings"
-            className="w-fit text-sm font-medium text-blue-600 hover:text-blue-700"
+            className={`${card} flex items-center justify-between transition-shadow hover:shadow-md`}
           >
-            View all bookings →
+            <div>
+              <p className="font-medium text-gray-900">Bookings</p>
+              <p className="mt-1 text-sm text-gray-500">{stats.today} today</p>
+            </div>
+            <span className="text-2xl font-semibold text-gray-900">{stats.last30Days}</span>
+          </Link>
+          <Link
+            href="/dashboard/statistics"
+            className={`${card} flex items-center justify-between transition-shadow hover:shadow-md`}
+          >
+            <div>
+              <p className="font-medium text-gray-900">Statistics</p>
+              <p className="mt-1 text-sm text-gray-500">Trends over any period</p>
+            </div>
+            <span aria-hidden className="text-xl text-blue-600">→</span>
           </Link>
         </div>
       )}

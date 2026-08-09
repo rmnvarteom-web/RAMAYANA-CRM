@@ -35,3 +35,46 @@ export async function getBookingStats(agencyId: string): Promise<BookingStats> {
 
   return { today: today_, yesterday, last7Days, last30Days };
 }
+
+export interface DailyBookingPoint {
+  date: string; // YYYY-MM-DD, Bangkok calendar day
+  count: number;
+  totalAmount: number;
+}
+
+// One point per calendar day in [from, to], zero-filled — the chart needs a
+// continuous series, not just the days that happen to have bookings.
+export async function getBookingsByDay(
+  agencyId: string,
+  from: string,
+  to: string,
+): Promise<DailyBookingPoint[]> {
+  const fromStart = bangkokDayStartUtc(from);
+  const toEnd = bangkokDayStartUtc(addDaysToDateString(to, 1));
+
+  const bookings = await db.booking.findMany({
+    where: { agencyId, createdAt: { gte: fromStart, lt: toEnd } },
+    select: { createdAt: true, totalAmount: true },
+  });
+
+  const byDay = new Map<string, { count: number; totalAmount: number }>();
+  for (const booking of bookings) {
+    const key = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok" }).format(
+      booking.createdAt,
+    );
+    const entry = byDay.get(key) ?? { count: 0, totalAmount: 0 };
+    entry.count += 1;
+    entry.totalAmount += Number(booking.totalAmount);
+    byDay.set(key, entry);
+  }
+
+  const points: DailyBookingPoint[] = [];
+  let cursor = from;
+  while (cursor <= to) {
+    const entry = byDay.get(cursor) ?? { count: 0, totalAmount: 0 };
+    points.push({ date: cursor, ...entry });
+    cursor = addDaysToDateString(cursor, 1);
+  }
+
+  return points;
+}
