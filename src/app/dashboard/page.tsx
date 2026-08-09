@@ -49,6 +49,9 @@ export default async function DashboardPage() {
           <Link href="/admin/bookings" className="text-sm underline">
             Payments pending review →
           </Link>
+          <Link href="/admin/daily-booking" className="text-sm underline">
+            Daily Booking →
+          </Link>
         </>
       )}
     </main>
